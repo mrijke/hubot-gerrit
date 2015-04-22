@@ -1,0 +1,31 @@
+{
+  "name": "hubot-gerrit",
+  "description": "Hubot script for Gerrit including channel subscriptions and Slack attachments",
+  "version": "0.0.1",
+  "author": {
+    "name": "justmiles"
+  },
+  "keywords": [
+    "hubot",
+    "hubot-gerrit",
+    "gerrit",
+    "git"
+  ],
+  "peerDependencies": {
+    "hubot": "2.x"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git://github.com/justmiles/hubot-gerrit.git"
+  },
+  "engines": {
+    "node": ">=0.12.x"
+  },
+  "contributors": [
+  { "name":"nparry" },
+  { "name":"justmiles" }
+  ],
+  "bugs": {
+    "url": "https://github.com/justmiles/hubot-gerrit/issues"
+  }
+}
