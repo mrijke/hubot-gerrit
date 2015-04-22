@@ -197,21 +197,26 @@ searchMe = (robot, gerrit) -> (msg) ->
           for r in results when r.id
             robot.emit 'slack-attachment',
               message:
-                room: 'dev'
+                room: msg.message.room
               content: attachments.queryResult change: r
         else
           msg.send formatters.queryResult change: r for r in results when r.id
 
 showSubscriptions = (robot) -> (msg) ->
+  hasSubscriptions = false
   show = (obj, type) ->
     for k,v of obj
       if typeof v == 'object'
         if v.indexOf(msg.message.room) != -1
+          hasSubscriptions = true
           msg.send "#{msg.message.room} is subscribed to #{type} `#{k}`"
 
   show robot.brain.data.gerrit?.eventStream?.subscription?.user, 'user'
   show robot.brain.data.gerrit?.eventStream?.subscription?.event, 'event'
   show robot.brain.data.gerrit?.eventStream?.subscription?.project, 'project'
+
+  if !hasSubscriptions
+    msg.send "#{msg.message.room} has no subscriptions"
 
 deleteSubscription = (robot) -> (msg) ->
   type = msg.match[2].toLowerCase()
