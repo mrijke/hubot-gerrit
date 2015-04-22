@@ -116,24 +116,6 @@ attachments =
       }
     ]
     }
-    "comment-added": (json) -> {
-    "fallback": "#{extractName json} reviewed #{json.patchSet.number} (#{extractReviews json}) of '#{json.change.subject}' for #{json.change.project}/#{json.change.branch}: #{json.change.url}",
-    "title": "Commit Reviewed in #{json.change.project}",
-    "title_link": json.change.url,
-    "text": "#{json.change.subject} (#{extractReviews json})",
-    "fields": [
-      {
-        "title": "Reviewed by",
-        "value": "#{extractName json}",
-        "short": true
-      },
-      {
-        "title": "Branch",
-        "value": json.change.branch,
-        "short": true
-      }
-    ]
-    }
 
 formatters =
   queryResult:          (json) -> "'#{json.change.subject}' for #{json.change.project}/#{json.change.branch} by #{extractName json.change} on #{formatDate json.change.lastUpdated}: #{json.change.url}"
