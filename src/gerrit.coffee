@@ -8,7 +8,8 @@
 #
 # Commands:
 #   hubot search gerrit _<query>_ - Search Gerrit for changes (limited to 3 results)
-#   hubot show gerrit updates for _(project|user|event)_  _<update>_ - Subscribe active channel to Gerrit updates
+#   hubot show gerrit updates for _event_  _(patchset-created|change-abandoned|change-restored|change-merged)_ - Subscribe active channel to Gerrit updates
+#   hubot show gerrit updates for _(project|user)_  _<update>_ - Subscribe active channel to Gerrit updates
 #   hubot remove gerrit updates for _(project|user|event)_  _<update>_ - Remove Gerrit update from active channel
 #   hubot view gerrit subscriptions - View gerrit subscriptions for active channel
 #
@@ -102,6 +103,7 @@ attachments =
     "fallback": "#{extractName json} merged  #{json.patchSet.number} of '#{json.change.subject}' for #{json.change.project}/#{json.change.branch}: #{json.change.url}",
     "title": "Commit Merged in #{json.change.project}",
     "title_link": json.change.url,
+    "color": "#36a64f",
     "text": json.change.subject,
     "fields": [
       {
