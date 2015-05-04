@@ -49,6 +49,7 @@ attachments =
     "fallback": "#{extractName json} uploaded patchset #{json.patchSet.number} of '#{json.change.subject}' for #{json.change.project}/#{json.change.branch}: #{json.change.url}",
     "title": "Commit Created in #{json.change.project}",
     "title_link": json.change.url,
+    "color": "ffff9d",
     "text": json.change.subject,
     "fields": [
       {
@@ -67,6 +68,7 @@ attachments =
     "fallback": "#{extractName json} abandoned '#{json.change.subject}' for #{json.change.project}/#{json.change.branch}: #{json.change.url}",
     "title": "Commit Abandoned in #{json.change.project}",
     "title_link": json.change.url,
+    "color": "f30020",
     "text": json.change.subject,
     "fields": [
       {
@@ -85,6 +87,7 @@ attachments =
     "fallback": "#{extractName json} restored '#{json.change.subject}' for #{json.change.project}/#{json.change.branch}: #{json.change.url}",
     "title": "Commit Restored in #{json.change.project}",
     "title_link": json.change.url,
+    "color": "#F35A00",
     "text": json.change.subject,
     "fields": [
       {
