@@ -49,7 +49,7 @@ attachments =
     "fallback": "#{extractName json} uploaded patchset #{json.patchSet.number} of '#{json.change.subject}' for #{json.change.project}/#{json.change.branch}: #{json.change.url}",
     "title": "Commit Created in #{json.change.project}",
     "title_link": json.change.url,
-    "color": "ffff9d",
+    "color": "a6a6a6",
     "text": json.change.subject,
     "fields": [
       {
@@ -256,27 +256,32 @@ eventStreamMe = (robot, gerrit) ->
 
   streamEvents.stdout.on "data", (data) ->
     robot.logger.debug "Gerrit stream-events: #{data}"
+
     json = try
       JSON.parse data
     catch error
       robot.logger.error "Gerrit stream-events: Error parsing Gerrit JSON. Error=#{error}, Event=#{data}"
       null
+
     return unless json
+
     if robot.adapterName == 'slack'
       formatter = attachments.events[json.type]
+
     else
       formatter = formatter.events[json.type]
+
     msg = try
       formatter json if formatter
     catch error
       robot.logger.error "Gerrit stream-events: Error formatting event. Error=#{error}, Event=#{data}"
       null
+
     if formatter == null
       robot.logger.info "Gerrit stream-events: Unrecognized event #{data}"
-    else if msg
-      robot.logger.error getSubscribers(robot, json)
-      for room in getSubscribers(robot, json)
 
+    else if msg
+      for room in getSubscribers(robot, json)
         if robot.adapterName == 'slack'
           robot.emit 'slack-attachment',
             message:

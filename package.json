@@ -1,7 +1,7 @@
 {
   "name": "hubot-gerrit",
   "description": "Hubot script for Gerrit including channel subscriptions and Slack attachments",
-  "version": "0.0.5",
+  "version": "0.0.6",
   "author": {
     "name": "justmiles"
   },
