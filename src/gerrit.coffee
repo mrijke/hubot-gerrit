@@ -5,6 +5,7 @@
 #
 # Configuration:
 #   HUBOT_GERRIT_SSH_URL
+#   HUBOT_GERRIT_SSH_PRIVATE_KEY
 #
 # Commands:
 #   hubot search gerrit _<query>_ - Search Gerrit for changes (limited to 3 results)
@@ -21,9 +22,13 @@
 
 cp = require "child_process"
 url = require "url"
+mktemp = require "mktemp"
+fs = require "fs"
 
 # Required - The SSH URL for your Gerrit server.
 sshUrl = process.env.HUBOT_GERRIT_SSH_URL || ""
+# Required - The private key to connect to Gerrit (single line with \n)
+privateKey = process.env.HUBOT_GERRIT_SSH_PRIVATE_KEY || ""
 
 attachments =
   queryResult: (json) -> {
@@ -161,6 +166,8 @@ module.exports = (robot) ->
 
   if gerrit.protocol != "ssh:" || gerrit.hostname == ""
     robot.logger.error "Gerrit commands inactive because HUBOT_GERRIT_SSH_URL=#{gerrit.href} is not a valid SSH URL"
+  else if privateKey == ""
+    robot.logger.error "Gerrit commands inactive because HUBOT_GERRIT_SSH_PRIVATE_KEY is not set"
   else
     eventStreamMe robot, gerrit
     robot.respond /(?:search|query)(?: me)? gerrit (.+)/i, searchMe robot, gerrit
@@ -233,7 +240,9 @@ subscribeToEvents = (robot) -> (msg) ->
 
 eventStreamMe = (robot, gerrit) ->
   robot.logger.info "Gerrit stream-events: Starting connection"
-  streamEvents = cp.spawn "ssh", [gerrit.hostname, "-p", gerrit.port, "gerrit", "stream-events"]
+  keyFile = mktemp.createFileSync "XXXXX.tmp"
+  fs.writeFileSync keyFile HUBOT_GERRIT_SSH_PRIVATE_KEY
+  streamEvents = cp.spawn "ssh", [gerrit.hostname, "-p", gerrit.port, "gerrit", "stream-events", "-i", keyFile]
   done = false
   reconnect = null
 
