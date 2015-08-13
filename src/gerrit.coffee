@@ -241,7 +241,7 @@ subscribeToEvents = (robot) -> (msg) ->
 eventStreamMe = (robot, gerrit) ->
   robot.logger.info "Gerrit stream-events: Starting connection"
   keyFile = mktemp.createFileSync "XXXXX.tmp"
-  fs.writeFileSync keyFile HUBOT_GERRIT_SSH_PRIVATE_KEY
+  fs.writeFileSync keyFile privateKey
   streamEvents = cp.spawn "ssh", [gerrit.hostname, "-p", gerrit.port, "gerrit", "stream-events", "-i", keyFile]
   done = false
   reconnect = null
