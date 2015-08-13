@@ -242,7 +242,7 @@ eventStreamMe = (robot, gerrit) ->
   robot.logger.info "Gerrit stream-events: Starting connection"
   keyFile = mktemp.createFileSync "XXXXX.tmp"
   fs.writeFileSync keyFile, privateKey
-  streamEvents = cp.spawn "ssh", [gerrit.hostname, "-p", gerrit.port, "gerrit", "stream-events", "-i", keyFile]
+  streamEvents = cp.spawn "ssh", [gerrit.hostname, "-p", gerrit.port, "gerrit", "stream-events", "-i", keyFile, "-o", "UserKnownHostsFile=/dev/null", "-o", "StrictHostKeyChecking=no"]
   done = false
   reconnect = null
 
