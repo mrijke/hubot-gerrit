@@ -8,11 +8,11 @@
 #   HUBOT_GERRIT_SSH_PRIVATE_KEY
 #
 # Commands:
-#   hubot search gerrit _<query>_ - Search Gerrit for changes (limited to 3 results)
-#   hubot show gerrit updates for _event_  _(patchset-created|change-abandoned|change-restored|change-merged)_ - Subscribe active channel to Gerrit updates
-#   hubot show gerrit updates for _(project|user)_  _<update>_ - Subscribe active channel to Gerrit updates
-#   hubot remove gerrit updates for _(project|user|event)_  _<update>_ - Remove Gerrit update from active channel
-#   hubot view gerrit subscriptions - View gerrit subscriptions for active channel
+#   hubot gerrit search <query> - Search Gerrit for changes (limited to 3 results)
+#   hubot gerrit show updates for event (patchset-created|change-abandoned|change-restored|change-merged) - Subscribe active channel to Gerrit updates
+#   hubot gerrit show updates for (project|user) <value> - Subscribe active channel to Gerrit updates
+#   hubot gerrit remove updates for (project|user|event)  <value> - Remove Gerrit update from active channel
+#   hubot gerrit view subscriptions - View gerrit subscriptions for active channel
 #
 # Notes:
 #   Hubot has to be running as a user who has registered a SSH key with Gerrit
@@ -27,11 +27,12 @@ fs = require "fs"
 
 # Required - The SSH URL for your Gerrit server.
 sshUrl = process.env.HUBOT_GERRIT_SSH_URL || ""
-# Required - The private key to connect to Gerrit (single line with \n)
+# The private key to connect to Gerrit (single line with \n)
 privateKey = process.env.HUBOT_GERRIT_SSH_PRIVATE_KEY?.replace(/\\n/g, '\n') || ""
 
-keyFile = mktemp.createFileSync "XXXXX.tmp"
-fs.writeFileSync keyFile, privateKey
+if privateKey
+  keyFile = mktemp.createFileSync "XXXXX.tmp"
+  fs.writeFileSync keyFile, privateKey
 
 attachments =
   queryResult: (json) -> {
@@ -131,7 +132,7 @@ attachments =
     }
 
 formatters =
-  queryResult:          (json) -> "'#{json.change.subject}' for #{json.change.project}/#{json.change.branch} by #{extractName json.change} on #{formatDate json.change.lastUpdated}: #{json.change.url}"
+  queryResult: (json) -> "'#{json.change.subject}' for #{json.change.project}/#{json.change.branch} by #{extractName json.change} on #{formatDate json.change.lastUpdated}: #{json.change.url}"
   events:
     "patchset-created": (json) -> "#{extractName json} uploaded patchset #{json.patchSet.number} of '#{json.change.subject}' for #{json.change.project}/#{json.change.branch}: #{json.change.url}"
     "change-abandoned": (json) -> "#{extractName json} abandoned '#{json.change.subject}' for #{json.change.project}/#{json.change.branch}: #{json.change.url}"
@@ -142,7 +143,7 @@ formatters =
 
 formatDate = (seconds) ->
   timestamp = new Date(seconds * 1000);
-  format = {hour: '2-digit', minute:'2-digit'}
+  format = {hour: '2-digit', minute: '2-digit'}
   return "#{timestamp.toLocaleDateString()} #{timestamp.toLocaleTimeString('en-US', format)}";
 
 asSet = (array) ->
@@ -169,8 +170,6 @@ module.exports = (robot) ->
 
   if gerrit.protocol != "ssh:" || gerrit.hostname == ""
     robot.logger.error "Gerrit commands inactive because HUBOT_GERRIT_SSH_URL=#{gerrit.href} is not a valid SSH URL"
-  else if privateKey == ""
-    robot.logger.error "Gerrit commands inactive because HUBOT_GERRIT_SSH_PRIVATE_KEY is not set"
   else
     eventStreamMe robot, gerrit
     robot.respond /(?:search|query)(?: me)? gerrit (.+)/i, searchMe robot, gerrit
@@ -179,7 +178,11 @@ module.exports = (robot) ->
     robot.respond /view gerrit subscriptions/i, showSubscriptions robot
 
 searchMe = (robot, gerrit) -> (msg) ->
-  cp.exec "ssh -i #{keyFile} #{gerrit.auth}@#{gerrit.hostname} -o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no -p #{gerrit.port} gerrit query --format=JSON -- #{msg.match[1]} limit:3", (err, stdout, stderr) ->
+  if keyFile
+    sshCommand = "ssh -i #{keyFile} #{gerrit.auth}@#{gerrit.hostname} -o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no -p #{gerrit.port} gerrit query --format=JSON -- #{msg.match[1]} limit:3"
+  else
+    sshCommand = "ssh #{gerrit.hostname} -p #{gerrit.port} gerrit query --format=JSON -- #{msg.match[1]} limit:3"
+  cp.exec sshCommand, (err, stdout, stderr) ->
     if err
       msg.send "Sorry, something went wrong talking with Gerrit: ```#{stderr}```"
     else
@@ -233,17 +236,22 @@ subscribeToEvents = (robot) -> (msg) ->
   subscribers = robot.brain.data.gerrit?.eventStream?.subscription?[type]?[event] || []
   subscribers.push msg.message.room
 
-  robot.brain.data.gerrit ?= { }
-  robot.brain.data.gerrit.eventStream ?= { }
-  robot.brain.data.gerrit.eventStream.subscription ?= { }
-  robot.brain.data.gerrit.eventStream.subscription[type] ?= { }
+  robot.brain.data.gerrit ?= {}
+  robot.brain.data.gerrit.eventStream ?= {}
+  robot.brain.data.gerrit.eventStream.subscription ?= {}
+  robot.brain.data.gerrit.eventStream.subscription[type] ?= {}
   robot.brain.data.gerrit.eventStream.subscription[type][event] = asSet subscribers
 
   msg.send "This channel has subscribed to Gerrit #{type} updates matching `#{event}`"
 
 eventStreamMe = (robot, gerrit) ->
   robot.logger.info "Gerrit stream-events: Starting connection"
-  streamEvents = cp.spawn "ssh", ["-i", keyFile, "-o", "UserKnownHostsFile=/dev/null", "-o", "StrictHostKeyChecking=no", "#{gerrit.auth}@#{gerrit.hostname}", "-p", gerrit.port, "gerrit", "stream-events"]
+  if keyFile
+    sshArgs = ["-i", keyFile, "-o", "UserKnownHostsFile=/dev/null", "-o", "StrictHostKeyChecking=no",
+               "#{gerrit.auth}@#{gerrit.hostname}", "-p", gerrit.port, "gerrit", "stream-events"]
+  else
+    sshArgs = [gerrit.hostname, "-p", gerrit.port, "gerrit", "stream-events"]
+  streamEvents = cp.spawn "ssh", sshArgs
   done = false
   reconnect = null
 
@@ -257,8 +265,8 @@ eventStreamMe = (robot, gerrit) ->
 
   getSubscribers = (robot, event) ->
     projectSubs = robot.brain.data.gerrit?.eventStream?.subscription?.project?[event.change.project] || []
-    eventSubs   = robot.brain.data.gerrit?.eventStream?.subscription?.event?[event.type] || []
-    userSubs    = robot.brain.data.gerrit?.eventStream?.subscription?.user?["#{extractName event}"] || []
+    eventSubs = robot.brain.data.gerrit?.eventStream?.subscription?.event?[event.type] || []
+    userSubs = robot.brain.data.gerrit?.eventStream?.subscription?.user?["#{extractName event}"] || []
     return asSet projectSubs.concat(eventSubs).concat(userSubs)
 
   streamEvents.stderr.on "data", (data) ->
