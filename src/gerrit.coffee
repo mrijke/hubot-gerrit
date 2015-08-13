@@ -28,7 +28,10 @@ fs = require "fs"
 # Required - The SSH URL for your Gerrit server.
 sshUrl = process.env.HUBOT_GERRIT_SSH_URL || ""
 # Required - The private key to connect to Gerrit (single line with \n)
-privateKey = process.env.HUBOT_GERRIT_SSH_PRIVATE_KEY || ""
+privateKey = process.env.HUBOT_GERRIT_SSH_PRIVATE_KEY?.replace(/\\n/g, '\n') || ""
+
+keyFile = mktemp.createFileSync "XXXXX.tmp"
+fs.writeFileSync keyFile, privateKey
 
 attachments =
   queryResult: (json) -> {
@@ -176,7 +179,7 @@ module.exports = (robot) ->
     robot.respond /view gerrit subscriptions/i, showSubscriptions robot
 
 searchMe = (robot, gerrit) -> (msg) ->
-  cp.exec "ssh #{gerrit.hostname} -p #{gerrit.port} gerrit query --format=JSON -- #{msg.match[1]} limit:3", (err, stdout, stderr) ->
+  cp.exec "ssh -i #{keyFile} #{gerrit.auth}@#{gerrit.hostname} -o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no -p #{gerrit.port} gerrit query --format=JSON -- #{msg.match[1]} limit:3", (err, stdout, stderr) ->
     if err
       msg.send "Sorry, something went wrong talking with Gerrit: ```#{stderr}```"
     else
@@ -240,9 +243,7 @@ subscribeToEvents = (robot) -> (msg) ->
 
 eventStreamMe = (robot, gerrit) ->
   robot.logger.info "Gerrit stream-events: Starting connection"
-  keyFile = mktemp.createFileSync "XXXXX.tmp"
-  fs.writeFileSync keyFile, privateKey
-  streamEvents = cp.spawn "ssh", ["-i", keyFile, "-o", "UserKnownHostsFile=/dev/null", "-o", "StrictHostKeyChecking=no", gerrit.hostname, "-p", gerrit.port, "gerrit", "stream-events"]
+  streamEvents = cp.spawn "ssh", ["-i", keyFile, "-o", "UserKnownHostsFile=/dev/null", "-o", "StrictHostKeyChecking=no", "#{gerrit.auth}@#{gerrit.hostname}", "-p", gerrit.port, "gerrit", "stream-events"]
   done = false
   reconnect = null
 
