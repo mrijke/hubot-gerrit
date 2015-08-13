@@ -22,10 +22,17 @@
     "node": ">=0.10.36"
   },
   "contributors": [
-  { "name":"nparry" },
-  { "name":"justmiles" }
+    {
+      "name": "nparry"
+    },
+    {
+      "name": "justmiles"
+    }
   ],
   "bugs": {
     "url": "https://github.com/justmiles/hubot-gerrit/issues"
+  },
+  "dependencies": {
+    "mktemp": "^0.4.0"
   }
 }
