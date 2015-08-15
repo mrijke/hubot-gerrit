@@ -162,7 +162,7 @@ extractName = (json) ->
   account = json.uploader || json.abandoner || json.restorer || json.submitter || json.author || json.owner
   account?.name || account?.email || "Gerrit"
 extractReviews = (json) ->
-  ("#{a.description}=#{a.value}" for a in json.approvals).join ","
+  ("#{a.description}=#{a.value}" for a in json.approvals?).join ","
 
 module.exports = (robot) ->
   gerrit = url.parse sshUrl
@@ -287,7 +287,7 @@ eventStreamMe = (robot, gerrit) ->
       formatter = attachments.events[json.type]
 
     else
-      formatter = formatter.events[json.type]
+      formatter = formatters.events[json.type]
 
     msg = try
       formatter json if formatter
@@ -306,4 +306,4 @@ eventStreamMe = (robot, gerrit) ->
               room: room
             content: msg
         else
-          robot.send room: room, "Gerrit: #{msg}" for room in robotRooms robot
+          robot.send room: room, "Gerrit: #{msg}"
