@@ -162,7 +162,7 @@ extractName = (json) ->
   account = json.uploader || json.abandoner || json.restorer || json.submitter || json.author || json.owner
   account?.name || account?.email || "Gerrit"
 extractReviews = (json) ->
-  ("#{a.description}=#{a.value}" for a in json.approvals?).join ","
+  ("#{a.description}=#{a.value}" for a in json.approvals).join ","
 
 module.exports = (robot) ->
   gerrit = url.parse sshUrl
@@ -288,6 +288,10 @@ eventStreamMe = (robot, gerrit) ->
 
     else
       formatter = formatters.events[json.type]
+
+    if json.type == "comment-added" and json.approvals == null
+      #if this is a comment but doesn't put an approval, just ignore it.
+      return
 
     msg = try
       formatter json if formatter
