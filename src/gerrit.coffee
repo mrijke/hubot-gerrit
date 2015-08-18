@@ -264,7 +264,7 @@ eventStreamMe = (robot, gerrit) ->
     reconnect = setTimeout (-> eventStreamMe robot, gerrit), 10 * 1000 unless done
 
   getSubscribers = (robot, event) ->
-    projectSubs = robot.brain.data.gerrit?.eventStream?.subscription?.project?[event.change.project] || []
+    projectSubs = robot.brain.data.gerrit?.eventStream?.subscription?.project?[event.change?.project] || []
     eventSubs = robot.brain.data.gerrit?.eventStream?.subscription?.event?[event.type] || []
     userSubs = robot.brain.data.gerrit?.eventStream?.subscription?.user?["#{extractName event}"] || []
     return asSet projectSubs.concat(eventSubs).concat(userSubs)
