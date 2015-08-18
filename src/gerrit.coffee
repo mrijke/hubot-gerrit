@@ -289,9 +289,9 @@ eventStreamMe = (robot, gerrit) ->
     else
       formatter = formatters.events[json.type]
 
-    if json.type == "comment-added" and json.approvals == null
+    if json.type == "comment-added" and json.approvals == undefined
       #if this is a comment but doesn't put an approval, just ignore it.
-      return
+      null
 
     msg = try
       formatter json if formatter
